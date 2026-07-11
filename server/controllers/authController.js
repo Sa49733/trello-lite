@@ -164,11 +164,10 @@ const forgotPassword = async (
     await user.save();
 
     // Reset Link
-   const resetUrl =
-  `https://trello-lite-umi9.vercel.app/reset-password/${resetToken}`;
+const resetUrl = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
 
     const html = `
-    
+
       <h2>Password Reset</h2>
 
       <p>Hello ${user.name},</p>

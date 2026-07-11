@@ -1,10 +1,9 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "https://trello-lite-1-yzzt.onrender.com/api",
+  baseURL: import.meta.env.VITE_API_URL,
 });
 
-// Attach JWT token to every request
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");

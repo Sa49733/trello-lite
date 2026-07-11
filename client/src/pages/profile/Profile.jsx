@@ -335,9 +335,9 @@ function Profile() {
                 ) : user.avatar ? (
 
                   <img
-                    src={`http://localhost:5000/${user.avatar}`}
-                    alt="Avatar"
-                    className="w-full h-full rounded-full object-cover"
+                  src={`${import.meta.env.VITE_API_URL.replace("/api", "")}/${user.avatar}`}
+                  alt="Avatar"
+                  className="w-full h-full rounded-full object-cover"
                   />
 
                 ) : (

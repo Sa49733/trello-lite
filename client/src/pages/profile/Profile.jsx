@@ -1,4 +1,8 @@
-import { useEffect, useState } from "react";
+import {
+  useEffect,
+  useState,
+  useRef,
+} from "react";
 import toast from "react-hot-toast";
 import {
   FaUser,
@@ -12,6 +16,7 @@ import {
 import api from "../../services/api";
 
 function Profile() {
+  const fileInputRef = useRef(null);
   const [user, setUser] = useState({
     name: "",
     email: "",
@@ -115,20 +120,21 @@ function Profile() {
   // Handle Avatar Change
   // ===========================
 
-  const handleAvatarChange = (
-    e
-  ) => {
-    const file =
-      e.target.files[0];
+  const handleAvatarChange = async (e) => {
+  const file = e.target.files?.[0];
 
-    if (!file) return;
+  if (!file) return;
 
-    setAvatar(file);
+  if (!file.type.startsWith("image/")) {
+    toast.error("Please select an image!");
+    return;
+  }
 
-    setPreview(
-      URL.createObjectURL(file)
-    );
-  };
+  setAvatar(file);
+  setPreview(URL.createObjectURL(file));
+
+  await uploadAvatar(file);
+};
 
   // ===========================
   // Update Profile
@@ -167,61 +173,56 @@ function Profile() {
   // Upload Avatar
   // ===========================
 
-  const uploadAvatar = async () => {
-    if (!avatar) {
-      toast.error(
-        "Please select an image!"
-      );
-      return;
+  const uploadAvatar = async (selectedFile = avatar) => {
+  if (!selectedFile) {
+    toast.error("Please select an image!");
+    return;
+  }
+
+  try {
+    setAvatarLoading(true);
+
+    const formData = new FormData();
+
+    formData.append(
+      "avatar",
+      selectedFile
+    );
+
+    const { data } = await api.post(
+      "/users/avatar",
+      formData
+    );
+
+    toast.success(
+      "Profile Picture Updated!"
+    );
+
+    setUser((prev) => ({
+      ...prev,
+      avatar: data.avatar,
+    }));
+
+    setAvatar(null);
+    setPreview("");
+
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
     }
 
-    try {
-      setAvatarLoading(true);
+  } catch (error) {
+    console.log(error);
 
-      const formData =
-        new FormData();
+    toast.error(
+      error.response?.data?.message ||
+      "Upload Failed!"
+    );
 
-      formData.append(
-        "avatar",
-        avatar
-      );
-
-      const { data } =
-        await api.post(
-          "/users/avatar",
-          formData,
-          {
-            headers: {
-              "Content-Type":
-                "multipart/form-data",
-            },
-          }
-        );
-
-      toast.success(
-        "Profile Picture Updated!"
-      );
-
-      setUser((prev) => ({
-        ...prev,
-        avatar: data.avatar,
-      }));
-
-      setAvatar(null);
-      setPreview("");
-
-    } catch (error) {
-      console.log(error);
-
-      toast.error(
-        error.response?.data
-          ?.message ||
-          "Upload Failed!"
-      );
-    } finally {
-      setAvatarLoading(false);
-    }
-  };
+  } finally {
+    setAvatarLoading(false);
+  }
+};
     // ===========================
   // Change Password
   // ===========================
@@ -356,20 +357,21 @@ function Profile() {
 
               </div>
 
-              <label className="absolute bottom-0 right-0 bg-blue-600 hover:bg-blue-700 text-white rounded-full p-3 cursor-pointer shadow-lg">
+              <button
+  type="button"
+  onClick={() => fileInputRef.current?.click()}
+  className="absolute bottom-0 right-0 bg-blue-600 hover:bg-blue-700 text-white rounded-full p-3 cursor-pointer shadow-lg"
+>
+  <FaCamera />
+</button>
 
-                <FaCamera />
-
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={
-                    handleAvatarChange
-                  }
-                  className="hidden"
-                />
-
-              </label>
+<input
+  ref={fileInputRef}
+  type="file"
+  accept="image/*"
+  onChange={handleAvatarChange}
+  className="hidden"
+/>
 
             </div>
 
@@ -396,17 +398,15 @@ function Profile() {
           </div>
 
           <button
-            type="button"
-            onClick={uploadAvatar}
-            disabled={avatarLoading}
-            className="w-full mb-8 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white py-3 rounded-xl font-bold transition shadow-lg"
-          >
-
-            {avatarLoading
-              ? "Uploading..."
-              : "Upload Profile Picture"}
-
-          </button>
+  type="button"
+  onClick={() => fileInputRef.current?.click()}
+  disabled={avatarLoading}
+  className="w-full mb-8 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white py-3 rounded-xl font-bold transition shadow-lg disabled:opacity-60"
+>
+  {avatarLoading
+    ? "Uploading..."
+    : "Upload Profile Picture"}
+</button>
                     <form
             onSubmit={updateProfile}
             className="space-y-6"

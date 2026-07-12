@@ -1,35 +1,24 @@
-const nodemailer = require("nodemailer");
+const { Resend } = require("resend");
 
-// ==============================
-// Email Transporter
-// ==============================
-
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
-
-// ==============================
-// Send Email
-// ==============================
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const sendEmail = async (to, subject, html) => {
   try {
-    await transporter.sendMail({
-      from: `"Trello Lite" <${process.env.EMAIL_USER}>`,
+    const { data, error } = await resend.emails.send({
+      from: "Trello Lite <onboarding@resend.dev>",
       to,
       subject,
       html,
     });
 
-    console.log("Email sent successfully");
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    console.log("Email sent successfully:", data);
+    return data;
   } catch (error) {
     console.log("sendEmail failed:", error.message);
-    // Re-throw so the caller (e.g. forgotPassword) actually knows
-    // the send failed, instead of silently treating it as success.
     throw error;
   }
 };
